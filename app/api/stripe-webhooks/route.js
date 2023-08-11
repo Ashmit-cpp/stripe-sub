@@ -1,9 +1,7 @@
-// api/stripe-webhooks.js
 
 import { buffer } from 'micro';
 import Stripe from 'stripe';
 
-// Make sure to replace 'YOUR_STRIPE_SECRET_KEY' with your actual Stripe secret key
 const stripe = new Stripe('STRIPE_SECRET_KEY', {
   apiVersion: '2022-11-15',
 });
@@ -15,8 +13,8 @@ export const config = {
     bodyParser: false,
   },
 };
-
-const handler = async (req, res) => {
+export async function POST(req,res) 
+ {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
@@ -42,6 +40,5 @@ const handler = async (req, res) => {
 
 
   res.status(200).json({ received: true });
-};
+}
 
-export default handler;
