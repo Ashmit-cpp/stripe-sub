@@ -14,11 +14,12 @@ const StripePricingTable = () => {
   }, []);
 
   return (
-    <div className="bg-gray-900 p-4"> 
-      <stripe-pricing-table
+    <div>  
+       
+    <stripe-pricing-table
         pricing-table-id="prctbl_1Ndai8SCSiTFNLWTkpox0wE8"
         publishable-key="pk_test_51NdZGrSCSiTFNLWTvkV8gHmGVMCwnabecK6YPKwx26CBPJUmeRx81Nm1LGuGP0OLTdMHOAPeA1gcNViRMyhEpRI500Doa7lu6C"
-      />
+      />  
     </div>
   );
 };
