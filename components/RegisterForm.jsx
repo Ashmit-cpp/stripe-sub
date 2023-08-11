@@ -12,8 +12,9 @@ export default function RegisterForm() {
 
   const router = useRouter();
 
+  //function to call on submit
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); //prevent from refreshing
 
     if (!name || !email || !password) {
       setError("All fields are necessary.");
@@ -61,27 +62,31 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="grid place-items-center h-screen">
-      <div className="shadow-lg p-5 rounded-lg border-t-4 border-green-400">
-        <h1 className="text-xl font-bold my-4">Register</h1>
-
+    <div className="grid place-items-center h-screen bg-custom-blue">
+    <div className="shadow-lg p-9 rounded-lg border-t-4 border-blue-300 bg-white">
+      <h1 className="text-xl font-semibold my-4 text-center">Create Account</h1>
+      
+      <h2 className="text-s font-semibold text-left ">Name</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
             onChange={(e) => setName(e.target.value)}
             type="text"
             placeholder="Full Name"
           />
+
+        <h2 className="text-s font-semibold text-left mb-[-0.77rem]">Email</h2>
           <input
             onChange={(e) => setEmail(e.target.value)}
             type="text"
             placeholder="Email"
           />
+        <h2 className="text-s font-semibold text-left mb-[-0.77rem]">Password</h2>
           <input
             onChange={(e) => setPassword(e.target.value)}
             type="password"
             placeholder="Password"
           />
-          <button className="bg-green-600 text-white font-bold cursor-pointer px-6 py-2">
+          <button className="bg-custom-blue text-white font-bold cursor-pointer px-6 py-2">
             Register
           </button>
 
