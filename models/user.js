@@ -14,10 +14,26 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    plan:{
+    plan: {
       type: String,
       required: false,
-    }
+    },
+    stripeSubscriptionId: {  // New field for Stripe subscription ID
+      type: String,
+      required: false,
+    },
+    stripeCustomerId: {  // New field for Stripe customer ID
+      type: String,
+      required: false,
+    },
+    stripePriceId: {  // New field for Stripe price ID
+      type: String,
+      required: false,
+    },
+    stripeCurrentPeriodEnd: {  // New field for Stripe current period end
+      type: Date,
+      required: false,
+    },
   },
   { timestamps: true }
 );

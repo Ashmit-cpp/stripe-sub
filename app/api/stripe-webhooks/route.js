@@ -1,78 +1,78 @@
-import Stripe from "stripe";
-import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers"
+import Stripe from "stripe"
+import { connectMongoDB } from "@/lib/mongodb";
+import User from "@/models/user";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2022-11-15",
-});
+  apiVersion: "2022-11-15"
+})
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+export async function POST(req) {
+  const body = await req.text();
+  const signature = headers().get("Stripe-Signature");
+  await connectMongoDB();
 
-const webhookHandler = async (req) => {
+  let event;
+
   try {
-    const buf = await req.text();
-    const sig = req.headers.get("stripe-signature");
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET
+    )
+  } catch (error) {
+    return new Response(`Webhook Error: ${error.message}`, { status: 400 })
+  }
 
-    let event;
+  const session = event.data.object
+
+  if (event.type === "checkout.session.completed") {
+    console.log("inside")
 
     try {
-      event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-
-      if (!(err instanceof Error)) console.log(err);
-      console.log(`❌ Error message: ${errorMessage}`);
-
-      return NextResponse.json(
-        {
-          error: {
-            message: `Webhook Error: ${errorMessage}`,
-          },
-        },
-        { status: 400 }
+      // Retrieve the subscription details from Stripe.
+      const subscription = await stripe.subscriptions.retrieve(
+        session.subscription
       );
-    }
 
-    console.log("✅ Success:", event.id);
 
-    const subscription = event.data.object;
-
-    // switch (event.type) {
-    //   case "customer.subscription.created":
-    //     await prisma.user.update({
-    //       where: {
-    //         stripeCustomerId: subscription.customer,
-    //       },
-    //       data: {
-    //         isActive: true,
-    //       },
-    //     });
-    //     break;
-    //   case "customer.subscription.deleted":
-    //     await prisma.user.update({
-    //       where: {
-    //         stripeCustomerId: subscription.customer,
-    //       },
-    //       data: {
-    //         isActive: false,
-    //       },
-    //     });
-    //     break;
-    //   default:
-    //     console.warn(`🤷‍♀️ Unhandled event type: ${event.type}`);
-    //     break;
-    // }
-
-    return NextResponse.json({ received: true });
-  } catch {
-    return NextResponse.json(
+    await User.updateOne(
+      { email  }, 
       {
-        error: {
-          message: "Method Not Allowed",
+        $set: {
+          stripeSubscriptionId: subscription.id,
+          stripeCustomerId: subscription.customer,
+          stripePriceId: subscription.items.data[0].price.id,
+          stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
         },
-      },
-      { status: 405 }
-    ).headers.set("Allow", "POST");
+      }
+    );
+  } catch (error) {
+    console.log("Error updating user for checkout.session.completed: ", error);
   }
-};
+}
 
-export { webhookHandler as POST };
+if (event.type === "invoice.payment_succeeded") {
+  try {
+    // Retrieve the subscription details from Stripe.
+    const subscription = await stripe.subscriptions.retrieve(
+      session.subscription
+    );
+    console.log(subscription);
+
+    // Update the price id and set the new period end.
+    await User.updateOne(
+      { stripeSubscriptionId: subscription.id }, // Update the condition accordingly
+      {
+        $set: {
+          stripePriceId: subscription.items.data[0].price.id,
+          stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        },
+      }
+    );
+  } catch (error) {
+    console.log("Error updating user for invoice.payment_succeeded: ", error);
+  }
+}
+return new Response(null, { status: 200 });
+}
