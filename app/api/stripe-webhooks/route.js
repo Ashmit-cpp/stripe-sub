@@ -1,57 +1,78 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient } from "mongodb";
-import getRawBody from 'raw-body';
+import Stripe from "stripe";
+import { NextRequest, NextResponse } from "next/server";
 
-require('dotenv').config();
-let mongodbServer = process.env.MONGODB_URI;
-const stripe = require("stripe")(process.env.stripe_sk);
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2022-11-15",
+});
 
-export default async function handler(request,response) {
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  console.log("WEBHOOK CALLED BY STRIPE");
-  console.log("headers ", JSON.stringify(request.headers));
-
-  const sig = request.headers['stripe-signature'];
-
-  let event;
-  console.log("body ", JSON.stringify(request.body));
-
+const webhookHandler = async (req) => {
   try {
-    const rawBody = await getRawBody(request);
-    event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
-  } catch (err) {
-    console.log("Error occured ", err)
-    response.status(200).send(`Webhook Error: ${err.message}`);
-    return;
+    const buf = await req.text();
+    const sig = req.headers.get("stripe-signature");
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+
+      if (!(err instanceof Error)) console.log(err);
+      console.log(`❌ Error message: ${errorMessage}`);
+
+      return NextResponse.json(
+        {
+          error: {
+            message: `Webhook Error: ${errorMessage}`,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log("✅ Success:", event.id);
+
+    const subscription = event.data.object;
+
+    // switch (event.type) {
+    //   case "customer.subscription.created":
+    //     await prisma.user.update({
+    //       where: {
+    //         stripeCustomerId: subscription.customer,
+    //       },
+    //       data: {
+    //         isActive: true,
+    //       },
+    //     });
+    //     break;
+    //   case "customer.subscription.deleted":
+    //     await prisma.user.update({
+    //       where: {
+    //         stripeCustomerId: subscription.customer,
+    //       },
+    //       data: {
+    //         isActive: false,
+    //       },
+    //     });
+    //     break;
+    //   default:
+    //     console.warn(`🤷‍♀️ Unhandled event type: ${event.type}`);
+    //     break;
+    // }
+
+    return NextResponse.json({ received: true });
+  } catch {
+    return NextResponse.json(
+      {
+        error: {
+          message: "Method Not Allowed",
+        },
+      },
+      { status: 405 }
+    ).headers.set("Allow", "POST");
   }
-  console.log("event ", JSON.stringify(event));
-
-  // Handle the event
-  switch (event.type) {
-
-     case 'checkout.session.completed':
-      const sessionCheckoutCompleted = event.data.object;
-      // Then define and call a function to handle the event payment_intent.requires_action
-      break;
-    case 'payment_intent.succeeded':
-      const paymentIntentSucceeded = event.data.object;
-      // Then define and call a function to handle the event payment_intent.succeeded
-      break;
-      // ... handle other event types
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
-  console.log("Event handled");
-
-  // Return a 200 response to acknowledge receipt of the event
-  response.status(200).send(`Event ${event.type} handled successfully ${JSON.stringify(event)}`);
-
-}
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
 };
+
+export { webhookHandler as POST };
