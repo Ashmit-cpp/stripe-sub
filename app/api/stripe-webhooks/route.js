@@ -24,15 +24,15 @@ export async function POST(req) {
     return new Response(`Webhook Error: ${error.message}`, { status: 400 });
   }
 
-  const session = event.data.object;
-  const email = session.customer_email;
-  console.log(session)
+  const invoice = event.data.object;
+  const email = invoice.customer_email;
+  console.log(invoice)
   
   if (event.type === "invoice.payment_succeeded") {
     try {
       // Retrieve the subscription details from Stripe.
       const subscription = await stripe.subscriptions.retrieve(
-        session.subscription
+        invoice.subscription
       );
 
       await User.updateOne(
@@ -51,7 +51,7 @@ export async function POST(req) {
       );
     } catch (error) {
       console.log(
-        "Error updating user for checkout.session.completed: ",
+        "Error updating user for checkout.invoice.completed: ",
         error
       );
     }
