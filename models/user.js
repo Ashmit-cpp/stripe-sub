@@ -16,6 +16,7 @@ const userSchema = new Schema(
     },
     plan: {
       type: Boolean,
+      default: false, 
       required: false,
     },
     stripeSubscriptionId: {  
