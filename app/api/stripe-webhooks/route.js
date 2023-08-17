@@ -25,8 +25,9 @@ export async function POST(req) {
   }
 
   const session = event.data.object;
-  const email = session.customer;
-
+  const email = session.customer_email;
+  console.log(session)
+  
   if (event.type === "invoice.payment_succeeded") {
     try {
       // Retrieve the subscription details from Stripe.
@@ -38,6 +39,7 @@ export async function POST(req) {
         { email },
         {
           $set: {
+            plan: true,
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: subscription.customer,
             stripePriceId: subscription.items.data[0].price.id,

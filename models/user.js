@@ -15,22 +15,22 @@ const userSchema = new Schema(
       required: false,
     },
     plan: {
+      type: Boolean,
+      required: false,
+    },
+    stripeSubscriptionId: {  
       type: String,
       required: false,
     },
-    stripeSubscriptionId: {  // New field for Stripe subscription ID
+    stripeCustomerId: {  
       type: String,
       required: false,
     },
-    stripeCustomerId: {  // New field for Stripe customer ID
+    stripePriceId: {  
       type: String,
       required: false,
     },
-    stripePriceId: {  // New field for Stripe price ID
-      type: String,
-      required: false,
-    },
-    stripeCurrentPeriodEnd: {  // New field for Stripe current period end
+    stripeCurrentPeriodEnd: {  
       type: Date,
       required: false,
     },
