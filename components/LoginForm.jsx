@@ -67,7 +67,7 @@ export default function LoginForm() {
           )}
 
           <Link className="text-sm mt-3 text-center" href={"/register"}>
-            New to MyApp? <span className="underline">Sign Up</span>
+            New to site? <span className="underline">Sign Up</span>
           </Link>
         </form>
       </div>
